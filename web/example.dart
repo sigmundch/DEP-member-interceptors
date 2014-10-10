@@ -11,7 +11,8 @@ class Model {
   int get val >> observable => which ? a : b;
 }
 
-int j >> observable = 3;
+// TODO(sigmund): add support for globals like
+// int j >> observable = 3;
 
 class UI {
   Model model = new Model();
@@ -34,7 +35,7 @@ class UI {
     root = linear([
         label('  a: '), ia,
         label(', b: '), ib,
-        label(() => '  current: ${model.val} $j '), bt,
+        label(() => '  current: ${model.val}'), bt,
     ], true);
   }
 }
@@ -76,9 +77,6 @@ main() {
  }).then((_) => new Future.value()).then((_) {
    print('i++          ${u.root.render()}');
    model.i++;
-   j++;
-
-
 
  }).then((_) => new Future.value()).then((_) {
    print('-- interact via UI --');

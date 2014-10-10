@@ -1,7 +1,15 @@
 import 'dart:mirrors';
 
+/// Create a binding that observes changes when invoking the 0-arg function [f]
+Binding observe(f) => new Expression(f);
+
+/// Whether we are currently tracking dependencies between observable
+/// expressions.
 Binding _current = null;
 
+/// Wrap a one-arg function [f] into a function taht ignores obververs
+/// internally. This is useful if you want to track observability only in a
+/// subset of the subexpressions.
 ignoreObservers(f) => (e) {
   var c = _current;
   _current = null;
@@ -10,11 +18,14 @@ ignoreObservers(f) => (e) {
   return r;
 };
 
-Binding observe(f) => new Expression(f);
+/// The property-interceptor of observable properties that implements read and
+/// write barriers. When attaching listeners the read barriers will record what
+/// other observable fields are used when evaluating an expression.
+const observable = const _Interceptor();
 
-class Interceptor {
-
-  const Interceptor();
+/// Implements [observable].
+class _Interceptor {
+  const _Interceptor();
 
   read(o, name, original) {
     var last = null;
@@ -22,7 +33,7 @@ class Interceptor {
     if (_shouldRecord) {
       last = _current;
       _current = _propObserver(o, name);
-      if (last != null) last.dependsOn(_current);
+      if (last != null) last._dependsOn(_current);
     }
     var res = original();
     if (_shouldRecord) _current = last;
@@ -36,8 +47,7 @@ class Interceptor {
   }
 }
 
-const observable = const Interceptor();
-
+/// Expando to cache binding information on each observable property.
 final Expando<Map<Symbol, Binding>> _properties =
     new Expando<Map<Symbol, Binding>>();
 
@@ -47,6 +57,9 @@ _propObserver(model, name) {
   return map.putIfAbsent(name, () => new ObservableProperty(model, name));
 }
 
+/// A Binding is used to listen for observable changes on an expression or
+/// property. Internally holds the current value of the expression/property and
+/// how it depends on other observable expressions/properties.
 abstract class Binding<T> {
   bool _firstTime = false;
   List _listeners = null;
@@ -56,13 +69,13 @@ abstract class Binding<T> {
   Set<Binding> inDeps;
   Set<Binding> outDeps;
 
-  dependsOn(other) {
+  _dependsOn(other) {
     if (outDeps == null) outDeps = new Set();
     outDeps.add(other);
-    other.usedBy(this);
+    other._usedBy(this);
   }
 
-  usedBy(other) {
+  _usedBy(other) {
     if (inDeps == null) inDeps = new Set();
     inDeps.add(other);
   }
@@ -88,7 +101,7 @@ abstract class Binding<T> {
     //print('listen on: $this');
   }
 
-  notify([Set seen]) {
+  _notify([Set seen]) {
     if (_listeners == null && (inDeps == null || inDeps.isEmpty)) return;
     bool first = seen == null;
     if (first) seen = new Set();
@@ -101,7 +114,7 @@ abstract class Binding<T> {
     }
     if (inDeps != null) {
       for (var o in inDeps) {
-        o.notify(seen);
+        o._notify(seen);
       }
     }
     if (first) {
@@ -134,13 +147,16 @@ abstract class Binding<T> {
   get simpleString => '$value';
 }
 
+/// Node for an observable expression.
 class Expression<T> extends Binding<T> {
+  /// Closure that returns the current value of the expression.
   Function _read;
   Expression(this._read);
 
   T get value => _read();
 }
 
+/// Node for an observable property in an object.
 class ObservableProperty<T> extends Binding<T> {
   final Object target;
   final Symbol name;
@@ -155,7 +171,7 @@ class ObservableProperty<T> extends Binding<T> {
   update(value) {
     if (lastValue != value) {
       lastValue = value;
-      notify();
+      _notify();
     }
   }
 }

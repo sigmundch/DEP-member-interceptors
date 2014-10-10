@@ -6,6 +6,7 @@ input(g, s) => new InputBox(g, s);
 button(a, b) => new Button(a, b);
 label(a) => new Label(a);
 
+/// Base class for all views.
 abstract class View {
   View parent;
   bool change = false;
@@ -48,6 +49,7 @@ abstract class View {
   }
 }
 
+/// A view that renders subviews in a liner fashion.
 class LinearLayout extends View {
   List subviews;
   final String joiner;
@@ -61,6 +63,8 @@ class LinearLayout extends View {
     subviews.forEach((s) => s.reset());
   }
 
+  // Note: we ignore observers in subviews, since this view doesn't change when
+  // the subviews do.
   String render() => 
       '${subviews.map(ignoreObservers((e) => e.draw.value)).join(joiner)}';
 }
