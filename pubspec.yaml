@@ -1,0 +1,7 @@
+name: o2
+dependencies:
+  barback: any
+transformers:
+- o2
+- $dart2js:
+    $exclude: [web/example.dart, web/example2.dart]
