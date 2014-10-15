@@ -22,8 +22,9 @@ class UI {
   var bt;
  
   UI() {
-    //ia = input(model.&a);
-    //ib = input(model.&b);
+    // TODO(sigmund): it would be nice to be able to refer to a getter/setter
+    // pair as a symbol, for instance:
+    // ia = input(model.&a);
 
     ia = input(() => model.a, (v) => model.a = v);
     ib = input(() => model.b, (v) => model.b = v);
@@ -35,7 +36,7 @@ class UI {
     root = linear([
         label('  a: '), ia,
         label(', b: '), ib,
-        label(() => '  current: ${model.val}'), bt,
+        label(() => '  current: ${model.val} '), bt,
     ], true);
   }
 }

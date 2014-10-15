@@ -33,9 +33,10 @@ class InterceptorTransformer extends Transformer {
         var body = m.group(4);
         return '\n\n  // from: ${m.group(0).substring(3)}\n'
             '$type _$name $body\n'
-            '$type get $name => $interceptor.read(this, #$name, () => _$name);\n'
+            '$type get $name => $interceptor.read(this, #$name, () => _$name,'
+                ' (__v) => _$name = __v);\n'
             '  set $name($type __value) => '
-                '$interceptor.write(this, #$name, __value, '
+                '$interceptor.write(this, #$name, __value, () => _$name,'
                     '(__v) => _$name = __v);';
       }).replaceAllMapped(_topReg, (m) {
         var type = m.group(1);
@@ -44,9 +45,10 @@ class InterceptorTransformer extends Transformer {
         var body = m.group(4);
         return '\n\n// from: ${m.group(0).substring(1)}\n'
             '$type _$name $body\n'
-            '$type get $name => $interceptor.read(null, #$name, () => _$name);\n'
+            '$type get $name => $interceptor.read(null, #$name, () => _$name,'
+                ' (__v) => _$name = __v);\n'
             'set $name($type __value) => '
-                '$interceptor.write(null, #$name, __value, '
+                '$interceptor.write(null, #$name, __value, () => _$name,'
                     '(__v) => _$name = __v);';
       }).replaceAllMapped(_getReg, (m) {
         var type = m.group(1);
@@ -55,7 +57,7 @@ class InterceptorTransformer extends Transformer {
         var body = m.group(4);
         return 
             '\n\n  // from: ${m.group(0).substring(3)}\n'
-            '$type get $name => $interceptor.read(this, #$name, () $body);';
+            '$type get $name => $interceptor.read(this, #$name, () $body, null);';
       });
       transform.addOutput(new
           Asset.fromString(transform.primaryInput.id, newContent));

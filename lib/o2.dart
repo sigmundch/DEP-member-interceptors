@@ -1,5 +1,3 @@
-import 'dart:mirrors';
-
 /// Create a binding that observes changes when invoking the 0-arg function [f]
 Binding observe(f) => new Expression(f);
 
@@ -27,22 +25,22 @@ const observable = const _Interceptor();
 class _Interceptor {
   const _Interceptor();
 
-  read(o, name, original) {
+  read(o, name, getter, setter) {
     var last = null;
     var _shouldRecord = _current != null;
     if (_shouldRecord) {
       last = _current;
-      _current = _propObserver(o, name);
+      _current = _propObserver(o, name, getter, setter);
       if (last != null) last._dependsOn(_current);
     }
-    var res = original();
+    var res = getter();
     if (_shouldRecord) _current = last;
     return res;
   }
 
-  write(o, name, value, original) {
-    var p = _propObserver(o, name);
-    original(value);
+  write(o, name, value, getter, setter) {
+    var p = _propObserver(o, name, getter, setter);
+    setter(value);
     p.update(value);
   }
 }
@@ -51,10 +49,11 @@ class _Interceptor {
 final Expando<Map<Symbol, Binding>> _properties =
     new Expando<Map<Symbol, Binding>>();
 
-_propObserver(model, name) {
+_propObserver(model, name, getter, setter) {
   var map = _properties[model];
   if (map == null) _properties[model] = map = {};
-  return map.putIfAbsent(name, () => new ObservableProperty(model, name));
+  return map.putIfAbsent(name,
+      () => new ObservableProperty(name, getter, setter));
 }
 
 /// A Binding is used to listen for observable changes on an expression or
@@ -158,14 +157,15 @@ class Expression<T> extends Binding<T> {
 
 /// Node for an observable property in an object.
 class ObservableProperty<T> extends Binding<T> {
-  final Object target;
   final Symbol name;
+  final Function getter;
+  final Function setter;
 
-  ObservableProperty(this.target, this.name);
+  ObservableProperty(this.name, this.getter, this.setter);
 
   get simpleString => '#$name';
-  T get value => reflect(target).getField(name).reflectee;
-  set value(T v) => reflect(target).setField(name, v).reflectee;
+  T get value => getter();
+  set value(T v) => setter(v);
 
   var lastValue;
   update(value) {

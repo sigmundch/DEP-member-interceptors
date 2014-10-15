@@ -5,5 +5,5 @@ transformers:
 - o2
 # To debug: uncomment these lines and run `pub build --mode=debug`
 # To run: comment these lines (pub run fails otherwise)
-# - $dart2js:
-#     $exclude: [web/example.dart, web/example2.dart]
+#- $dart2js:
+#    $exclude: [web/example.dart, web/example2.dart]
