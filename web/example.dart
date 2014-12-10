@@ -4,6 +4,9 @@ import 'package:o2/o2.dart';
 import 'package:o2/ui.dart';
 
 class Model {
+  // Note: the syntax here might look odd to someone coming to this code for the
+  // first time. "i >> o" means that the field "i" is intercepted by "o". See
+  // example2.dart for an example of how this is expanded.
   int i >> observable = 1;
   int a >> observable = 1;
   int b >> observable = 20;
