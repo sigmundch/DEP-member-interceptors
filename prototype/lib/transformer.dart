@@ -9,8 +9,6 @@ import 'dart:async';
 import 'package:barback/barback.dart';
 import 'package:analyzer/analyzer.dart';
 import 'package:analyzer/src/generated/ast.dart';
-import 'package:analyzer/src/generated/error.dart';
-import 'package:analyzer/src/generated/parser.dart';
 import 'package:analyzer/src/generated/scanner.dart';
 import 'package:source_maps/refactor.dart';
 import 'package:source_span/source_span.dart';
@@ -25,18 +23,12 @@ class InterceptorTransformerWithAnnotationSyntax extends Transformer {
 
   final String allowedExtensions = '.dart';
 
-  static final RegExp _fieldReg =
-      new RegExp('\n\( [ ]*[^ \n]\+\) \([^ ]*\) >> \([^ ]*\) \([^;]*;\)');
-
-  static final RegExp _topReg =
-      new RegExp('\n\([^ \n]\+\) \([^ ]*\) >> \([^ ]*\) \([^;]*;\)');
-
-  static final RegExp _getReg =
-      new RegExp('\n\( [ ]*[^ \n]*\) get \([^ ]*\) >> \([^ ]*\) \(=>[^;]*\);');
-
   Future apply(Transform transform) async {
-    if (transform.primaryInput.id.path != 'web/example.dart') return;
     var content = await transform.primaryInput.readAsString();
+    var id = transform.primaryInput.id;
+    var url = id.path.startsWith('lib/')
+        ? 'package:${id.package}/${id.path.substring(4)}' : id.path;
+    var sourceFile = new SourceFile(content, url: url);
     var transaction = _transformCompilationUnit(content, sourceFile);
     if (!transaction.hasEdits) {
       transform.addOutput(transform.primaryInput);
@@ -45,44 +37,6 @@ class InterceptorTransformerWithAnnotationSyntax extends Transformer {
       printer.build(url);
       transform.addOutput(new Asset.fromString(id, printer.text));
     }
-  }
-
-      var newContent = content.replaceAllMapped(_fieldReg, (m) {
-        var type = m.group(1);
-        var name = m.group(2);
-        var interceptor = m.group(3);
-        var body = m.group(4);
-        return '\n\n  // from: ${m.group(0).substring(3)}\n'
-            '$type _$name $body\n'
-            '$type get $name => $interceptor.read(this, #$name, () => _$name,'
-                ' (__v) => _$name = __v);\n'
-            '  set $name($type __value) => '
-                '$interceptor.write(this, #$name, __value, () => _$name,'
-                    '(__v) => _$name = __v);';
-      }).replaceAllMapped(_topReg, (m) {
-        var type = m.group(1);
-        var name = m.group(2);
-        var interceptor = m.group(3);
-        var body = m.group(4);
-        return '\n\n// from: ${m.group(0).substring(1)}\n'
-            '$type _$name $body\n'
-            '$type get $name => $interceptor.read(null, #$name, () => _$name,'
-                ' (__v) => _$name = __v);\n'
-            'set $name($type __value) => '
-                '$interceptor.write(null, #$name, __value, () => _$name,'
-                    '(__v) => _$name = __v);';
-      }).replaceAllMapped(_getReg, (m) {
-        var type = m.group(1);
-        var name = m.group(2);
-        var interceptor = m.group(3);
-        var body = m.group(4);
-        return 
-            '\n\n  // from: ${m.group(0).substring(3)}\n'
-            '$type get $name => $interceptor.read(this, #$name, () $body, null);';
-      });
-      transform.addOutput(new
-          Asset.fromString(transform.primaryInput.id, newContent));
-    });
   }
 }
 
@@ -93,9 +47,14 @@ TextEditTransaction _transformCompilationUnit(
 
   for (var declaration in unit.declarations) {
     if (declaration is ClassDeclaration) {
-      _transformClass(declaration, code, sourceFile);
-    } else if (declaration is TopLevelVariableDeclaration) {
-      _transformFields(declaration, declaration.variables, code);
+      _transformClass(declaration, code);
+    } else {
+      if (declaration.metadata.length == 0) continue;
+      if (declaration is TopLevelVariableDeclaration) {
+        _transformField(declaration, declaration.variables, code);
+      } else if (declaration is FunctionDeclaration )  {
+        _transformMethod(declaration, code);
+      }
     }
   }
   return code;
@@ -106,12 +65,13 @@ void _transformClass(ClassDeclaration cls, TextEditTransaction code) {
   var instanceFields = new Set<String>();
 
   for (var member in cls.members) {
+    if (member.metadata.length == 0) continue;
     if (member is FieldDeclaration) {
-      if (member.metadata.length > 0) {
-        _transformFields(member, member.fields, code);
-        var names = member.fields.variables.map((v) => v.name.name);
-        instanceFields.addAll(names);
-      }
+      _transformField(member, member.fields, code);
+      var names = member.fields.variables.map((v) => v.name.name);
+      instanceFields.addAll(names);
+    } else if (member is MethodDeclaration) {
+      _transformMethod(member, code);
     }
   }
 
@@ -183,9 +143,8 @@ void _fixConstructor(ConstructorDeclaration ctor, TextEditTransaction code,
   code.edit(offset, offset, inserted);
 }
 
-void _transformFields(AnnotatedNode member, VariableDeclarationList fields,
+void _transformField(AnnotatedNode member, VariableDeclarationList fields,
     TextEditTransaction code) {
-
   // Unfortunately "var" doesn't work in all positions where type annotations
   // are allowed, such as "var get name". So we use "dynamic" instead.
   var type = 'dynamic';
@@ -196,45 +155,66 @@ void _transformFields(AnnotatedNode member, VariableDeclarationList fields,
     code.edit(fields.keyword.offset, fields.keyword.end, type);
   }
 
-  if (fields.variables.length > 1) throw "not supported";
-  var meta = member.metadata.first;
-  var interceptor = _getOriginalCode(meta);
+  if (fields.variables.length > 1) throw "more than one variable not supported";
+  var interceptor = _getAndRemoveInterceptor(member.metadata, code);
 
-  // remove all metadata
-  code.edit(meta.offset, meta.end, '');
-
-  for (int i = 0; i < fields.variables.length; i++) {
-    final field = fields.variables[i];
-    final name = field.name.name;
-
-    var target = member is FieldDeclaration && !member.isStatic ? 'this' : 'null';
-    var beforeInit = 'get $name => $interceptor.read($target, #$name, () => __\$$name, (v) => __\$$name = v);\n  $type __\$$name';
-
-    if (i > 0) beforeInit = '$type $beforeInit';
-
-    code.edit(field.name.offset, field.name.end, beforeInit);
-
-    // Replace comma with semicolon
-    final end = _findFieldSeperator(member.endToken.next);
-    if (end.type == TokenType.COMMA) code.edit(end.offset, end.end, ';');
-
-    code.edit(end.end, end.end, '\n  set $name($type value) { '
-        '$interceptor.write($target, #$name, () => __\$$name, (v) { __\$$name = v;});');
+  var isInstance = member is FieldDeclaration && !member.isStatic;
+  var end = member.end;
+  for (var variable in fields.variables) {
+    var nameNode = variable.name;
+    final name = nameNode.name;
+    code.edit(nameNode.offset, nameNode.end, '__\$$name');
+    code.edit(end, end, _getterFor(type, name, interceptor, isInstance));
+    code.edit(end, end, _setterFor(type, name, interceptor, isInstance));
   }
 }
 
-Token _findFieldSeperator(Token token) {
-  while (token != null) {
-    if (token.type == TokenType.COMMA || token.type == TokenType.SEMICOLON) {
-      break;
-    }
-    token = token.next;
+String _getterFor(type, name, interceptor, bool isInstance) => '''\n
+  $type get $name => $interceptor.read(${isInstance ? "this" : "null"},
+        #$name, () => __\$$name, (v) => __\$$name = v);
+''';
+
+String _setterFor(type, name, interceptor, bool isInstance) => '''\n
+  set $name($type __v) {
+    $interceptor.write(${isInstance ? "this" : "null"}, #$name, __v,
+        () => __\$$name, (v) { __\$$name = v;});
   }
-  return token;
+''';
+
+String _memberFor(name) => '''\n
+class __\$${name}_member extends _interceptors.Member {
+  const __\$${name}_member() : super(#$name);
+  get(target) => target.$name;
+  set(target, value) => target.$name = value;
+  invoke(target, List p, Map<Symbol, dynamic> n) {
+    throw "Not implemented";
+  }
+}'''
+
+void _transformMethod(member, TextEditTransaction code) {
+  assert (member is MethodDeclaration || member is FunctionDeclaration);
+  var interceptor = _getAndRemoveInterceptor(member.metadata, code);
+  var nameNode = member.name;
+  var name = nameNode.name;
+  var isInstance = member is MethodDeclaration && !member.isStatic;
+  var end = member.end;
+  if (member.isGetter) {
+    code.edit(nameNode.offset, nameNode.end, '__\$$name');
+    var type = member.returnType;
+    code.edit(end, end, _getterFor(type, name, interceptor, isInstance));
+  } else if (member.isSetter) {
+    code.edit(nameNode.offset, nameNode.end, '__\$$name');
+    var type = member.parameters.parameters[0].type;
+    code.edit(end, end, _setterFor(type, name, interceptor, isInstance));
+  }
 }
 
-// TODO(sigmund): remove hard coded Polymer support (@published). The proper way
-// to do this would be to switch to use the analyzer to resolve whether
-// annotations are subtypes of ObservableProperty.
-final observableMatcher =
-    new RegExp("@(published|observable|PublishedProperty|ObservableProperty)");
+String _getAndRemoveInterceptor(List<Annotation> metadata, TextEditTransaction
+    code) {
+  if (metadata.length > 1) throw "more than one annotation not supported";
+  var meta = metadata.first;
+  var interceptor = code.original.substring(meta.offset + 1, meta.end);
+  if (meta.arguments != null) interceptor = 'const $interceptor';
+  //code.edit(meta.offset, meta.end, '');
+  return interceptor;
+}
