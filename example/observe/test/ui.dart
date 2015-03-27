@@ -1,4 +1,4 @@
-import 'o2.dart';
+import 'package:observe/observe.dart';
 import 'dart:async';
 
 linear(list, h) => new LinearLayout(list, h);

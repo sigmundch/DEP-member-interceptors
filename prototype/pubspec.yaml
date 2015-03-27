@@ -1,9 +1,18 @@
-name: o2
+name: interceptor
 dependencies:
-  barback: any
+  barback: ^0.15.2+4
+  analyzer: ^0.24.0
+  source_span: ^1.1.0
+  source_maps: ^0.10.0
+dev_dependencies:
+  unittest: 0.12.0-beta.0
+
 transformers:
-- o2
-# To debug: uncomment these lines and run `pub build --mode=debug`
-# To run: comment these lines (pub run fails otherwise)
+- interceptor:
+    $include: test/annotation_syntax_test.dart
+- interceptor/redirect_syntax:
+    $include: test/redirect_syntax_test.dart
+- interceptor/with_syntax:
+    $include: test/with_syntax_test.dart
 - $dart2js:
-    $exclude: [web/example.dart, web/example2.dart]
+    $include: []
