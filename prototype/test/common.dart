@@ -1,21 +1,47 @@
+// Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+
+/// Common parts to all tests of this prototype. We included 3 implementations
+/// based on the annotations, `>>` and `with` syntax, so that they can be
+/// compared side-by-side.
+///
+/// This file declares the actual interceptor, the interface of the class
+/// that will be annotated with interceptors, and the actual tests that access
+/// an instance of this class to check that members are intercepted.
 library test.common;
 
 import 'package:unittest/unittest.dart';
+import 'package:interceptor/interceptor.dart';
 
 List<String> testLog = [];
 
-class TestInterceptor {
-  // when reading a field, return field + readDiff
+/// This test illustrates a simple interceptor that logs information, and may
+/// change the underlying value that is being intercepted in some way.
+class TestInterceptor implements ReadInterceptor, WriteInterceptor {
+
+  // When reading a value, return value + readDiff.
   final int readDiff;
 
+  // Whether to increment the underlying value on a read operation (illustrates
+  // you can have side-effects on reads!).
   final bool incrementOnRead;
 
-  // when writing a field, write value + writeDiff, unless the value was 0, in
+  // When writing a field, write value + writeDiff, unless the value was 0, in
   // which case, simply write 0.
   final int nonZeroWriteDiff;
+
   const TestInterceptor({this.readDiff: 0, this.nonZeroWriteDiff: 0,
     this.incrementOnRead: false});
 
+  /// This is the interceptor API in the proposal.
+  get(target, member) => read(target, member.name,
+      () => member.get(target), (v) => member.set(target, v));
+  set(target, value, member) => write(target, member.name, value,
+      () => member.get(target), (v) => member.set(target, v));
+
+  /// This is the alternative API where `member` is flatten.
   read(o, name, getter, setter) {
     testLog.add('read $name (before)');
     var res = getter();
@@ -39,8 +65,11 @@ const readWriteDiffs =
     const TestInterceptor(readDiff: 30, nonZeroWriteDiff: 10);
 const incrementOnRead = const TestInterceptor(incrementOnRead: true);
 
-// this is the interface that each test will implement, we declare it here to
-// make it simpler to write all tests together.
+// This is the interface that each test will implement, we declare it here to
+// make it simpler to write all tests together in a single file. However the
+// actual interceptors are applied when this interface is implemented (see
+// annotation_syntax_test.dart, with_syntax_test.dart, and
+// redirect_syntax_test.dart).
 abstract class TestCaseInterface {
   // For [noDiff], which under the multiple syntax alternatives would be:
   //   @noDiff int field1;
@@ -54,6 +83,8 @@ abstract class TestCaseInterface {
   set setter(int v) => x = v; // readWriteDiffs
 }
 
+/// These are the actual tests that access fields in `o` and show how
+/// interceptors are doing their job.
 void interceptorTests(TestCaseInterface o) {
   setUp(() {
     o.field1 = 0;
