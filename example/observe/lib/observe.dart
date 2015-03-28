@@ -7,6 +7,7 @@
 library observe;
 
 import 'package:interceptor/interceptor.dart';
+
 part 'src/binding.dart';
 part 'src/interceptor.dart';
 

@@ -5,25 +5,25 @@
 part of observe;
 
 /// The actual [observable] interceptor.
-class _Interceptor {
+class _Interceptor implements ReadInterceptor, WriteInterceptor {
   const _Interceptor();
 
-  read(o, name, getter, setter) {
+  get(o, member) {
     var last = null;
     var _shouldRecord = _current != null;
     if (_shouldRecord) {
       last = _current;
-      _current = _propObserver(o, name, getter, setter);
+      _current = _propObserver(o, member);
       if (last != null) last._dependsOn(_current);
     }
-    var res = getter();
+    var res = member.get(o);
     if (_shouldRecord) _current = last;
     return res;
   }
 
-  write(o, name, value, getter, setter) {
-    var p = _propObserver(o, name, getter, setter);
-    setter(value);
+  set(o, value, member) {
+    var p = _propObserver(o, member);
+    member.set(o, value);
     p.update(value);
   }
 }
@@ -33,11 +33,16 @@ class _Interceptor {
 final Expando<Map<Symbol, Binding>> _properties =
     new Expando<Map<Symbol, Binding>>();
 
-_propObserver(model, name, getter, setter) {
-  var map = _properties[model];
-  if (map == null) _properties[model] = map = {};
-  return map.putIfAbsent(name,
-      () => new _ObservableProperty(name, getter, setter));
+_propObserver(model, member) {
+  // TODO(sigmund): this is incorrect, we are mixing the model of multiple
+  // libraries together, this might be a useful change in the proposal: pass
+  // some form of library info for top-levels, maybe the library name?
+  var key = model != null ? model : #observe;
+  var map = _properties[key];
+  if (map == null) _properties[key] = map = {};
+  return map.putIfAbsent(member.name, () => 
+      new _ObservableProperty(member.name,
+        () => member.get(model), (v) => member.set(model, v)));
 }
 
 /// Node for an observable property in an object.

@@ -7,7 +7,7 @@ part of observe;
 /// A Binding is used to listen for observable changes on an expression or
 /// property. Internally holds the current value of the expression/property and
 /// how it depends on other observable expressions/properties.
-abstract class _Binding<T> {
+abstract class _Binding<T> implements Binding<T> {
   bool _firstTime = false;
   List _listeners = null;
 

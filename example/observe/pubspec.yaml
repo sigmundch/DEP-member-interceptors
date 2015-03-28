@@ -1,9 +1,9 @@
 name: observe
 dependencies:
-  interceptors: ../../prototype/
+  interceptor:
+    path: ../../prototype/
+dev_dependencies:
+  unittest: 0.12.0-beta.0
 transformers:
-- interceptors
-# To debug: uncomment these lines and run `pub build --mode=debug`
-# To run: comment these lines (pub run fails otherwise)
-- $dart2js:
-    $exclude: [web/example.dart, web/example2.dart]
+- interceptor: {$include: [example/ui/app.dart, test/observe_test.dart]}
+- $dart2js: {$include: []}

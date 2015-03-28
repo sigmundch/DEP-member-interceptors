@@ -1,3 +1,17 @@
+// Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+/// This library is a fun silly UI that renders in the command line in a way
+/// that highlights observable changes.
+///
+/// The UI is composed of [View]s, which can be a layout, a label, a button, or
+/// an input box. Label, buttons, and input boxes are bound to observable data.
+/// The UI is a string that is updated asynchronously. It contains ANSII color
+/// sequeneces to highlight portions that changed since the last time the UI was
+/// printed.
+library observe.example.ui;
+
 import 'package:observe/observe.dart';
 import 'dart:async';
 
@@ -13,6 +27,14 @@ abstract class View {
   Binding draw;
  
   View() {
+    /// Here is where all the magic happens (how we react and redraw changes
+    /// asynchornously):
+    /// - this call to observe will register any dependency we care about
+    /// - synchronously observe will call `redraw` on any change
+    /// - `redraw` will update the structure of this view-hierarchy, but we
+    ///    won't print a new line until the end of the event loop.
+    /// - if multiple changes occur, we'll render all of them together at the
+    ///   end of the event loop.
     draw = observe(_renderWithChangeHighlight)..listen(redraw);
   }
 
@@ -38,14 +60,15 @@ abstract class View {
   }
 
   bool scheduled = false;
-  schedulePrint() {
+  schedulePrint() async {
     if (scheduled) return;
     scheduled = true;
-    new Future.value().then((_) {
-      scheduled = false;
-      print(_renderWithChangeHighlight());
-      reset();
-    });
+
+    // Wait to render until the end of this event-loop:
+    await new Future.value(); 
+    scheduled = false;
+    print(_renderWithChangeHighlight());
+    reset();
   }
 }
 
