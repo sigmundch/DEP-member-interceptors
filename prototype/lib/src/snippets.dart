@@ -31,11 +31,19 @@ String emitFlatSetter(type, name, interceptor, bool isInstance) => '''\n
   }
 ''';
 
+// TODO(sigmund): use isInstance here, the checks for target == null are
+// incorrect.
 String emitMemberClass(name) => '''\n
 class __\$${name}_member extends _interceptor.Member {
   const __\$${name}_member() : super(#$name);
-  get(target) => target.__\$$name;
-  set(target, value) => target.__\$$name = value;
+  get(target) => target == null ? __\$$name : target.__\$$name;
+  set(target, value) {
+     if (target == null) {
+       __\$$name = value;
+     } else {
+       target.__\$$name = value;
+     }
+  }
   invoke(target, List p, Map<Symbol, dynamic> n) {
     throw "Not implemented";
   }
