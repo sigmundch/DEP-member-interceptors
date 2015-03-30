@@ -696,8 +696,8 @@ working. The code is organized as follows:
   whether an annotation is an interceptor or not, it simply assumes that they
   are. However, this is good enough to use for the two examples below.
 
-* [example/observe/][]: contains an implementation of observability (See
-  [example 4][] above) using interceptors.
+* [example/observe/][]: contains an implementation of observability using
+  interceptors (see [example 4][] above). 
 
 * [example/nonnull/][]: contains an example of non-nullability checks
   implemented as interceptors (see [example 3][] above).
