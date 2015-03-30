@@ -12,9 +12,10 @@ const nonnull = const _NonNullInterceptor();
 class _NonNullInterceptor implements WriteInterceptor {
   const _NonNullInterceptor();
 
-  // TODO(sigmund): the current propotype always injects the get call,
-  // eventually when we include resolution in it, we wont need to, and hence we
-  // wont need to include this code either:
+  // TODO(sigmund): This method here won't be needed on a real implementation.
+  // The current propotype doesn't do resolution, so it always adds the
+  // interceptor for reads and writes (even though this is supposed to be a
+  // write-only interceptor).
   get(o, member) => member.get(o);
 
   set(o, value, member) {

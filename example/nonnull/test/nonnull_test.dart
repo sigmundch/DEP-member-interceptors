@@ -17,14 +17,14 @@ class A {
 
 main() {
   var a = new A();
-  test('initial values are not checked', () {
+  test('initial values are not checked for null', () {
     expect(i, 0);
     expect(a.i, isNull);
     expect(a.j, 0);
     expect(j, isNull);
   });
 
-  test('write operations are checked', () {
+  test('write operations are checked for null', () {
     i = 1;
     j = 1;
     a.i = 1;
