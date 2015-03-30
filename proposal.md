@@ -648,7 +648,19 @@ which we have mentioned thoroughout the document:
 The sources of this github repo include several examples of intereceptors
 working. The code is organized as follows:
 
-> TBR
+* [prototype/][]: contains a prototype implementation that only handles fields,
+  getters, and setters. The implementation demonstrates 3 alternative syntaxes
+  (annotations, `with` and `>>`). To keep things simple, the prototype is mainly
+  syntax based. That means, it doesn't resolve types and it will not figure out
+  whether an annotation is an interceptor or not, it simply assumes that they
+  are. However, this is good enough to use for the two examples below.
+
+* [example/observe/][]: contains an implementation of observability (See
+  [example 4][] above) using interceptors.
+
+* [example/nonnull/][]: contains an example of non-nullability checks
+  implemented as interceptors (see [example 3][] above).
+
 
 [@sigmundch]: https://github.com/sigmundch
 [@gbracha]: https://github.com/gbracha
@@ -662,8 +674,12 @@ working. The code is organized as follows:
 [Angular]: http://github.com/angular/angular.dart
 [Polymer]: http://github.com/dart-lang/polymer-dart
 [no-member]: no_member_semantics.md
-[example/observe/]: example/observe/
+[prototype/]: prototype/README.md
+[example/observe/]: example/observe/README.md
+[example/nonnull/]: example/nonnull/README.md
 [Object Observe]: http://arv.github.io/ecmascript-object-observe/
 [alternatives]: #alternatives
 [examples]: #examples
+[example 3]: #example-3-contract-validation
+[example 4]: #example-4-observability
 
