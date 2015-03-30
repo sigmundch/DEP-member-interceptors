@@ -415,7 +415,7 @@ An intercepted field:
 
 is equivalent to:
 ```dart
-  get name => interceptor.get(target, const _$nameMember);
+  get name => interceptor.get(target, const _$nameMember());
   set name(value) => interceptor.set(target, value, const _$nameMember());
 ```
 
@@ -441,15 +441,15 @@ would become:
 ```dart
 class MyClass {
   String _$name1 = "1";
-  get name => interceptor.get(this, const _$nameMember);
+  get name => interceptor.get(this, const _$nameMember());
   set name(value) => interceptor.set(this, value, const _$nameMember());
 
   String _$name2;
-  get name => interceptor.get(this, const _$nameMember);
+  get name => interceptor.get(this, const _$nameMember());
   set name(value) => interceptor.set(this, value, const _$nameMember());
 
   String _$name3;
-  get name => interceptor.get(this, const _$nameMember);
+  get name => interceptor.get(this, const _$nameMember());
   set name(value) => interceptor.set(this, value, const _$nameMember());
 
   MyClass(String name3) : _$name2 = "2", _$name3 = name;
@@ -626,6 +626,47 @@ the expression `o.m`, as a getter, so `ReadInterceptors` will be used on such
 operation. With the introduction of [tear-offs][], we could conceively do the
 same for `o#m`, or have a separate kind of interceptor for this purpose.
 
+### Other proposals: partial classes
+
+Depending on the actual design, partial classes (see [bug 8547][b8547]) is a
+different language proposal that could help with data-observability. With
+partial classes we wouldn't eliminate the need for code-generation, but, we
+could do so in a way that code is generated on a separate file.
+
+For example, we would ask users to write code like this:
+```dart
+part 'example.g.dart'; // auto-generated
+
+class Person {
+  @observable String _firstName;
+  @observable String _lastName;
+  @observable String _fullName => '$_firstName $_lastName';
+}
+```
+
+and autogenerate `example.g.dart` to have:
+```dart
+
+partial class MyClass {
+  int get firstName => observable.get(this, const __firstNameMember());
+  int get lastName => observable.get(this, const __lastNameMember());
+  int get fullName => observable.get(this, const __fullNameMember());
+}
+
+class __fistNameMember() {
+  ...
+  get(o) => o._firstName;
+}
+
+...
+```
+
+This is not as general as interceptors, though. In particular, it requires
+code-generation, it is not possible to intercept properties on the side, and it
+requires conventions (such as using a private name instead of a public name) to
+be able to correctly override the public behavior of objects.
+
+
 ## Implications and limitations
 
 Here are some important implications and limitations of this proposal, many of
@@ -682,4 +723,4 @@ working. The code is organized as follows:
 [examples]: #examples
 [example 3]: #example-3-contract-validation
 [example 4]: #example-4-observability
-
+[b8547]: https://code.google.com/p/dart/issues/detail?id=8547
