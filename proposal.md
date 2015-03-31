@@ -344,7 +344,7 @@ annotated, for example:
 ```
 library mylibrary;
 
-@SideTag(observable, MyClass, #name)
+@ApplyInterceptorTo(observable, MyClass, #name)
 import 'other.dart' show MyClass;
 ```
 
