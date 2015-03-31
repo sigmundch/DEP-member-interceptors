@@ -2,41 +2,41 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library nonnull.test.nonnull_test;
+library nonnegative.test.nonnegative_test;
 
-import 'package:nonnull/nonnull.dart';
+import 'package:nonnegative/nonnegative.dart';
 import 'package:unittest/unittest.dart';
 
-@nonnull int i = 0;
-int j = null;
+@nonnegative int i = 0;
+int j = -1;
 
 class A {
-  @nonnull int i;
+  @nonnegative int i;
   int j = 0;
 }
 
 main() {
   var a = new A();
-  test('initial values are not checked for null', () {
+  test('initial values are not validated', () {
     expect(i, 0);
     expect(a.i, isNull);
     expect(a.j, 0);
-    expect(j, isNull);
+    expect(j, -1);
   });
 
-  test('write operations are checked for null', () {
+  test('write operations are validated', () {
     i = 1;
     j = 1;
     a.i = 1;
     a.j = 1;
 
-    expect(() => i = null, throws);
+    expect(() => i = -2, throws);
     expect(i, 1);
-    j = null;
-    expect(j, isNull);
-    expect(() => a.i = null, throws);
+    j = -2;
+    expect(j, -2);
+    expect(() => a.i = -2, throws);
     expect(a.i, 1);
-    a.j = null;
-    expect(a.j, isNull);
+    a.j = -2;
+    expect(a.j, -2);
   });
 }

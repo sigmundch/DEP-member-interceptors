@@ -166,19 +166,19 @@ interceptors. For example:
 
 ```dart
 class MyValue {
-  @nonnull int x;
+  @nonnegative int x;
 }
 ```
 
-internally the `nonnull` interceptor can check that `x` is never set to have a
-null value. Which would be equivalent to write:
+internally the `nonnegative` interceptor can check that `x` is never set to have
+a negative value. Which would be equivalent to write:
 
 ```dart
 class MyValue {
   int _x;
   int get x => _x;
   int set x(v) {
-    if (v == null) throw "x can't be null!";
+    if (v < 0) throw "x can't be negative!";
     _x = v;
   }
 }
@@ -699,7 +699,7 @@ working. The code is organized as follows:
 * [example/observe/][]: contains an implementation of observability using
   interceptors (see [example 4][] above). 
 
-* [example/nonnull/][]: contains an example of non-nullability checks
+* [example/nonnegative/][]: contains an example of non-nullability checks
   implemented as interceptors (see [example 3][] above).
 
 
@@ -717,7 +717,7 @@ working. The code is organized as follows:
 [no-member]: no_member_semantics.md
 [prototype/]: prototype/README.md
 [example/observe/]: example/observe/README.md
-[example/nonnull/]: example/nonnull/README.md
+[example/nonnegative/]: example/nonnegative/README.md
 [Object Observe]: http://arv.github.io/ecmascript-object-observe/
 [alternatives]: #alternatives
 [examples]: #examples

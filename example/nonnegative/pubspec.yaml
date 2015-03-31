@@ -1,9 +1,9 @@
-name: nonnull
+name: nonnegative
 dependencies:
   interceptor:
     path: ../../prototype/
 dev_dependencies:
   unittest: 0.12.0-beta.0
 transformers:
-- interceptor: {$include: [test/nonnull_test.dart]}
+- interceptor: {$include: [test/nonnegative_test.dart]}
 - $dart2js: {$include: []}
