@@ -566,9 +566,14 @@ There are a few benefits of going with traditional annotations (as this proposal
 suggests):
 
  * There are no syntax changes required in the language. The new types will be
-   added to `dart:core` so the change would be backwards compatible.  The
+   added to a `dart:` library so the change would be backwards compatible.  The
    challenge is that now language implementors need to resolve the type of
    annotations in order to distinguish plain annotations from interceptors.
+
+ * Frameworks can encapsulate whether or not they use interceptors. This also
+   means that a framework like Polymer can switch to use interceptors internally
+   without exposing a breaking change to their users (fields annotated
+   `@observable` will continue to work).
 
  * It doesn't require additional changes to also support decorating classes,
    libraries, or providing [side-annotations](#decorating-from-the-side).
