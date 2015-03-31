@@ -15,6 +15,25 @@ library test.common;
 import 'package:unittest/unittest.dart';
 import 'package:interceptor/interceptor.dart';
 
+// This is the interface that each test will implement, we declare it here to
+// make it simpler to write all tests together in a single file. However the
+// actual interceptors are applied when this interface is implemented (see
+// annotation_syntax_test.dart, with_syntax_test.dart, and
+// redirect_syntax_test.dart).
+abstract class TestCaseInterface {
+  // To decorate with [noDiff], which under the multiple syntax alternatives
+  // would be:
+  //   @noDiff int field1;
+  //   int field1 >> noDiff;
+  //   int field1 with noDiff;
+  int field1;
+  int field2; // incrementOnRead
+
+  int x; // Not decorated
+  int get getter => x; // readWriteDiffs
+  set setter(int v) => x = v; // readWriteDiffs
+}
+
 List<String> testLog = [];
 
 /// This test illustrates a simple interceptor that logs information, and may
@@ -64,24 +83,6 @@ const noDiff = const TestInterceptor();
 const readWriteDiffs =
     const TestInterceptor(readDiff: 30, nonZeroWriteDiff: 10);
 const incrementOnRead = const TestInterceptor(incrementOnRead: true);
-
-// This is the interface that each test will implement, we declare it here to
-// make it simpler to write all tests together in a single file. However the
-// actual interceptors are applied when this interface is implemented (see
-// annotation_syntax_test.dart, with_syntax_test.dart, and
-// redirect_syntax_test.dart).
-abstract class TestCaseInterface {
-  // For [noDiff], which under the multiple syntax alternatives would be:
-  //   @noDiff int field1;
-  //   int field1 >> noDiff;
-  //   int field1 with noDiff;
-  int field1;
-  int field2; // incrementOnRead
-
-  int x; // Not decorated
-  int get getter => x; // readWriteDiffs
-  set setter(int v) => x = v; // readWriteDiffs
-}
 
 /// These are the actual tests that access fields in `o` and show how
 /// interceptors are doing their job.
