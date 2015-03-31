@@ -21,39 +21,39 @@ We propose an extension to the Dart language to support intercepting top-level
 and class members using an _interceptor_.
 
 Interceptors provide a way to statically add behavior to members without
-incurring in lots of boilerplate code. The definition of interceptors are
+incurring lots of boilerplate code. The definition of interceptors are
 constant objects, so the semantics of the program are still understood at
-compile-time. Interceptors are applied to members by decorating these members
+compile time. Interceptors are applied to members by decorating these members
 using annotations. This separation allows frameworks to define what the behavior
 of an interceptor is, while users just focus on decorating their members with
 the features they wish to use.
 
 **Note about terminology**: The term "_interceptor_" used in this document is
-similar to the concept of [python decorators][] or [Lisp's advices][advices].
+similar to the concept of [python decorators][] or [advice in Lisp][advice].
 We use the term _intercepted member_ to refer to a member that is decorated with
 an interceptor.  We may also use the term _redirected member_ for the same
-purpose, as using the member will redirect the implementation to the
+purpose, as using the member redirects the implementation to the
 interceptor.
 
 ## Motivation
 
-This proposal is heavily motivated by a specific use case in data-observability.
+This proposal is heavily motivated by a specific use case in data observability.
 A feature widely used in UI frameworks, including [Angular][] and [Polymer][].
 
 Many UI frameworks provide a lot of declarative features that help developers
 focus on building web applications without having to worry about low-level
-details, like how information has to be plumbed from data-models to UI-widgets.
+details, like how information has to be plumbed from data models to UI widgets.
 Some of these features include templates, dependency injection, and
-data-observability.  These features can be expressed very succinctly, but under
+data observability.  These features can be expressed very succinctly, but under
 the hood they may be implemented using reflection (typically for
-development-time in Dartium) and with code generation (typically with
+development time in Dartium) and with code generation (typically with
 transformers for deployment).
 
-Data-observability is a feature that lets users listen for changes that occur on
+Data observability is a feature that lets users listen for changes that occur on
 their data models. This is typically used by the framework to automatically
 react to changes and reflect them in the UI layer.
 
-While working with data-observability in Polymer, we run into these challenges:
+While working with data observability in Polymer, we run into these challenges:
 
 * It is not possible to guarantee a synchronous delivery of change notifications
   without requiring users to write additional boilerplate code (see more in the
@@ -67,9 +67,9 @@ While working with data-observability in Polymer, we run into these challenges:
 * To achieve performance at deployment time, we elminate dirty-checking by
   rewriting observable fields into properties with write barriers. What is
   especially peculiar about this transformation is that it modifies the source
-  files in-place. This adds additional complexity to our build system. All other
-  code-generation done by Polymer can be done so that the original source code
-  is unmmodified.
+  files in place. This adds additional complexity to our build system. All other
+  code generation done by Polymer can be done so that the original source code
+  is unmodified.
 
 * Composition of observable expressions is hard and we were forced to move
   compound expressions into a domain-specific language written in strings and
@@ -82,11 +82,11 @@ as a first-class concept (e.g. ES6's [Object Observe][]). This proposal takes a
 different angle: improve the expressiveness of the Dart language to be able to
 implement synchronous observability as a library.
 
-One of the benefits that will entail from this proposal is that the use of
+One of the benefits that this proposal entails is that the use of
 mirrors and code-generation in Polymer will be restricted to APIs that can be
 handled by the [reflectable package][], and on-the-side code generation of
 `Dart` files from `HTML` files. So, there would be no need to modify Dart files
-in-place anymore.
+in place anymore.
 
 ## Examples
 
@@ -109,8 +109,8 @@ memoization as follows:
     n <= 1 ? 1 : fibonacci(n - 1) + fibonacci(n - 2);
 ```
 
-Internally, the `memoize` annotation declares an interceptor that will trap calls
-to `fibonnacci` and return a cached result if one is available. In other words,
+Internally, the `memoize` annotation declares an interceptor that traps calls
+to `fibonacci` and returns a cached result if one is available. In other words,
 the code above is equivalent to writing something like:
 
 ```dart
@@ -129,7 +129,7 @@ Interceptors can be used to require that certain code is only executed in a
 specific context. For example, this can be used for:
 * turning on logging at development time.
 * instrumenting while investigating performance bottlenecks.
-* make functions visible only for testing.
+* making functions visible only for testing.
 
 For example, a `visibleForTesting` interceptor can be used as follows:
 
@@ -253,7 +253,7 @@ class Person implements Observable {
 ```
 
 besides issuing notifications on write operations, the `observable` interceptor
-can detect read operations and establish automatically the dependency between
+can detect read operations and automatically establish the dependency between
 properties.
 
 As part of this proposal, we have provided a prototype implementation using
@@ -262,7 +262,7 @@ observable interceptor in action.
 
 ## Proposal
 
-Member interceptors are a short hand notation for creating indirect access to
+Member interceptors are a shorthand notation for creating indirect access to
 properties and methods, where access goes through the interceptor first.
 
 The process of writing member interceptors consists of declaring an
@@ -293,7 +293,7 @@ abstract class Interceptor implements
 ```
 
 If an interceptor implements `ReadInterceptor`, it can be used to intercept
-reading fields, getters. Similarly, if it implements
+getters and reading fields. Similarly, if it implements
 `WriteInterceptor` it can be used on setter calls, and if it implements
 `InvokeInterceptor` it can be used on method calls.
 
@@ -309,7 +309,7 @@ abstract class Member {
 }
 ```
 
-`Member` objects will be created automatically by language implementors (vm,
+`Member` objects are created automatically by language implementations (VM,
 dart2js). Note: this class simplifies how we explain this proposal, but a viable
 alternative would be to desugar the `Member` object and pass the relevant
 information on the `Interceptor` API directly. See the [alternatives][] section
@@ -479,7 +479,7 @@ where the list of arguments and map of named arguments are the same kind that
 would be part of the `Invocation` passed to `noSuchMethod`.
 
 It's important to note that unlike `noSuchMethod`, these invocations are fully
-resolved and known at compile-time. This means that with proper inlining
+resolved and known at compile-time. This means that with proper inlining,
 compilers like dart2js should be able to eliminate the indirection and the use
 of `Function.apply` in `Member.invoke`.
 
@@ -609,7 +609,7 @@ without the `Member` class are available in a [suplemental document][no-member].
 
 One possible extension to this proposal is to allow interceptors to run at the
 time fields are initializated. This may be a separate interceptor than
-`ReadInterceptor`, since it's intent is fairly different.
+`ReadInterceptor`, since its intent is fairly different.
 
 Such interceptor could have several important applications. For instance, it
 could be used to implement a static dependency injection system in Dart.  That
@@ -636,9 +636,9 @@ same for `o#m`, or have a separate kind of interceptor for this purpose.
 ### Other proposals: partial classes
 
 Depending on the actual design, partial classes (see [bug 8547][b8547]) is a
-different language proposal that could help with data-observability. With
-partial classes we wouldn't eliminate the need for code-generation, but, we
-could do so in a way that code is generated on a separate file.
+different language proposal that could help with data observability. With
+partial classes we wouldn't eliminate the need for code generation, but we
+could do so in a way that code is generated in a separate file.
 
 For example, we would ask users to write code like this:
 ```dart
@@ -660,7 +660,7 @@ partial class MyClass {
   int get fullName => observable.get(this, const __fullNameMember());
 }
 
-class __fistNameMember() {
+class __firstNameMember() {
   ...
   get(o) => o._firstName;
 }
@@ -704,7 +704,7 @@ working. The code is organized as follows:
   are. However, this is good enough to use for the two examples below.
 
 * [example/observe/][]: contains an implementation of observability using
-  interceptors (see [example 4][] above). 
+  interceptors (see [example 4][] above).
 
 * [example/nonnegative/][]: contains an example of non-nullability checks
   implemented as interceptors (see [example 3][] above).
@@ -718,7 +718,7 @@ working. The code is organized as follows:
 [tear-offs]: https://github.com/dart-lang/dart_enhancement_proposals/blob/master/Accepted/0003%20-%20Generalized%20Tear-offs/proposal.md
 [python decorators]: https://www.python.org/dev/peps/pep-0318/
 [python class decorators]: https://www.python.org/dev/peps/pep-3129/
-[advices]: http://en.wikipedia.org/wiki/Advice_(programming)
+[advice]: http://en.wikipedia.org/wiki/Advice_(programming)
 [Angular]: http://github.com/angular/angular.dart
 [Polymer]: http://github.com/dart-lang/polymer-dart
 [no-member]: no_member_semantics.md
