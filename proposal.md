@@ -67,8 +67,9 @@ While working with data-observability in Polymer, we run into these challenges:
 * To achieve performance at deployment time, we elminate dirty-checking by
   rewriting observable fields into properties with write barriers. What is
   especially peculiar about this transformation is that it modifies the source
-  files in-place. All other code-generation done by Polymer can be
-  done so that the original source code is unmmodified.
+  files in-place. This adds additional complexity to our build system. All other
+  code-generation done by Polymer can be done so that the original source code
+  is unmmodified.
 
 * Composition of observable expressions is hard and we were forced to move
   compound expressions into a domain-specific language written in strings and
@@ -185,9 +186,8 @@ class MyValue {
 
 ### Example 4: observability
 
-Let's dive into more detail with our motivating problem of data-observability.
-Consider this code from Polymer, where an annotation is already used to indicate
-that a field is observable:
+Coming back to our motivating use-case.  Consider this code from Polymer, where
+an annotation is already used to indicate that a field is observable:
 
 
 ```dart
@@ -572,7 +572,7 @@ suggests):
    libraries, or providing [side-annotations](#decorating-from-the-side).
 
 The main point against using annotation is that it will adds semantic meaning to
-the code, but until now the language didn't have any feature that directly did
+annotations, but until now the language didn't have any feature that directly did
 so. However, it is worth nothing that annotations have been given semantic
 meaning by frameworks in the past. In particular, annotations are visible from
 the mirror system and frameworks like Polymer and Angular already use that
