@@ -315,7 +315,8 @@ alternative would be to desugar the `Member` object and pass the relevant
 information on the `Interceptor` API directly. See the [alternatives][] section
 for details.
 
-The `Member` and `Interceptor` interfaces would be added to `dart:core`.
+The `Member` and `Interceptor` interfaces would be added to a `dart:` library
+known to the Dart VM and dart2js.
 
 ### Interceptor usage syntax
 

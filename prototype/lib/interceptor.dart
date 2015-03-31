@@ -1,4 +1,9 @@
-// Declares the interceptor APIs. This would eventually be part of dart:core.
+// Copyright (c) 2013, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
+// Declares the interceptor APIs. This would eventually be part of a `dart:`
+// library.
 library interceptor;
 
 /// An interceptor that captures read operations.
