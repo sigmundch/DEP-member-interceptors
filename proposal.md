@@ -416,11 +416,12 @@ An intercepted field:
 
 is equivalent to:
 ```dart
+  var _$name;
   get name => interceptor.get(target, const _$nameMember());
   set name(value) => interceptor.set(target, value, const _$nameMember());
 ```
 
-A final field will not have the setter, and the `_$foo` field will be final.
+A final field will not have the setter, and the `_$name` field will be final.
 
 ### Initializers
 
