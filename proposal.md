@@ -322,7 +322,7 @@ known to the Dart VM and dart2js.
 
 The decoration process is how we tell that a field, getter, setter, or method
 should be redirected to an interceptor.  Dart annotations already
-provide syntax to decorate members, so we we propose reusing the annotation
+provide syntax to decorate members, so we propose reusing the annotation
 syntax for the purpose of annotating members with interceptors.
 
 **Note**: we have also considered other ideas requiring syntactic changes to the
