@@ -307,6 +307,7 @@ class IntlMessageInterceptor implements InvokeInterceptor {
     var catalog = findCatalog(locale);
     return member.invoke(catalog, positionalArgs, namedArgs);
   }
+}
 ```
 
 The user is forced to annotate message functions, but in exchange 
