@@ -324,6 +324,7 @@ well as other fields example and meaning that we've omitted here. e.g.
     description: "Description goes here",
     examples: const {"n" : "3", "k" : "2"})
 foo(n, k) => "Selected $k out of $n items.";
+```
 
 ## Proposal
 
