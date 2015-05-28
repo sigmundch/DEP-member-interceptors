@@ -260,6 +260,60 @@ As part of this proposal, we have provided a prototype implementation using
 transformers. See the [example/observe/][] folder to see the
 observable interceptor in action.
 
+### Example 5: Localized messages
+
+Localized messages in the Intl package look like the following:
+
+```dart
+String foo(String n, String k) => Intl.message(
+    "Selected $k out of $n items",
+    description: "Description for translators",
+    name: "foo",
+    args: [n, k]);
+```
+
+The user provides the text in the default locale, possibly with interpolated values, along
+with information for translators and for the localization machinery.
+For each translation we generate a deferred-loaded library with a singleton object 
+that has a "foo" method and map from the name to the method. The implementation finds
+the map for the current locale and the foo method within it, then does a Function.apply
+with the arguments.
+
+There are two issues for which this proposal might be helpful. First, users must duplicate
+the name and arguments of the function. The name is used as a lookup into the map of
+translated messages, and the arguments are passed to the translated function. When we
+extract the text for translation we have this information, but without modifying the user's
+original source code we have no way to get it at runtime.
+Second, the runtime lookup could be more efficient. With an InvokeInterceptor we could
+improve both of these. It could be more like
+
+```dart
+@intlMessage
+String foo(String n, String k) => Intl.message(
+    "Selected $k out of $n items",
+    description: "Description for translators");
+```
+
+where
+
+```dart
+const intlMessage = const IntlMessageInterceptor();
+
+class IntlMessageInterceptor implements InvokeInterceptor {
+  const IntlMessageInterceptor();
+
+  invoke(target, positionalArgs, namedArgs, member) {
+    var locale = findLocale();
+    var catalog = findCatalog(locale);
+    return member.invoke(catalog, positionalArgs, namedArgs);
+  }
+```
+
+The user is forced to annotate message functions, but in exchange 
+they don't have to provide and verify the function name and arguments. The
+implementation of member.invoke can presumably be better-optimized than a
+general Function.apply.
+
 ## Proposal
 
 Member interceptors are a shorthand notation for creating indirect access to
