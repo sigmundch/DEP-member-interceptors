@@ -288,7 +288,7 @@ Second, the runtime lookup could be more efficient. With an InvokeInterceptor we
 improve both of these. It could be more like
 
 ```dart
-@intlMessage
+@IntlMessage
 String foo(String n, String k) => Intl.message(
     "Selected $k out of $n items",
     description: "Description for translators");
@@ -297,7 +297,7 @@ String foo(String n, String k) => Intl.message(
 where
 
 ```dart
-const intlMessage = const IntlMessageInterceptor();
+const IntlMessage = const IntlMessageInterceptor();
 
 class IntlMessageInterceptor implements InvokeInterceptor {
   const IntlMessageInterceptor();
@@ -314,6 +314,16 @@ The user is forced to annotate message functions, but in exchange
 they don't have to provide and verify the function name and arguments. The
 implementation of member.invoke can presumably be better-optimized than a
 general Function.apply.
+
+It might even be possible to make more use of the annotation, pulling out 
+some of the optional information into it. This includes the description, as 
+well as other fields example and meaning that we've omitted here. e.g.
+
+```dart
+@IntlMessage(
+    description: "Description goes here",
+    examples: const {"n" : "3", "k" : "2"})
+foo(n, k) => "Selected $k out of $n items.";
 
 ## Proposal
 
